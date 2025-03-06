@@ -1,0 +1,36 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: grpc-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: grpc-service
+  template:
+    metadata:
+      labels:
+        app: grpc-service
+    spec:
+      containers:
+      - name: grpc-server
+        image: my-grpc-service:latest
+        ports:
+        - containerPort: 50051  # Your gRPC service runs here
+      - name: envoy
+        image: envoyproxy/envoy:v1.29.1
+        ports:
+        - containerPort: 8443  # Envoy listens for TLS gRPC traffic
+        volumeMounts:
+        - name: envoy-config
+          mountPath: /etc/envoy
+        - name: tls-certs
+          mountPath: /etc/envoy/tls
+          readOnly: true
+      volumes:
+      - name: envoy-config
+        configMap:
+          name: envoy-config
+      - name: tls-certs
+        secret:
+          secretName: grpc-tls-secret  # TLS certs will be stored here
